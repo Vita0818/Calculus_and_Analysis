@@ -33,12 +33,13 @@ function safeNode(node) {
 }
 
 function normalizeTree(node) {
-  const root = safeNode(node);
-  if (root.type !== "folder") return null;
-  root.children = root.children
+  const normalized = safeNode(node);
+  if (normalized.type === "file") return normalized;
+
+  normalized.children = (normalized.children || [])
     .map((child) => normalizeTree(child))
     .filter(Boolean);
-  return root;
+  return normalized;
 }
 
 function buildVisibleRoot(rawRoot) {
