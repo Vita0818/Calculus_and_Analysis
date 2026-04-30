@@ -4,8 +4,8 @@ const DRIVE_FOLDER_URL =
 const categories = [
   "全部",
   "课程笔记",
-  "微积分研讨班",
   "历年真题",
+  "微积分研讨班",
   "高等数学竞赛",
   "其他资料"
 ];
@@ -23,24 +23,24 @@ const notes = [
     category: "课程笔记",
     description: "课堂笔记、重点整理与阶段复习资料，持续更新。",
     status: "更新中",
-    url: DRIVE_FOLDER_URL,
+    url: "https://drive.google.com/drive/folders/1Qs_FlwJ5Ngf6Zs_RW20VCpC5OGkBW8Be?usp=drive_link",
     updatedAt: "2026-04-30"
-  },
-  {
-    title: "25秋冬微积分研讨班题目",
-    category: "微积分研讨班",
-    description: "研讨班题目、讨论材料与问题汇总。",
-    status: "更新中",
-    url: DRIVE_FOLDER_URL,
-    updatedAt: "2026-04-29"
   },
   {
     title: "MATH1135G-微积分（甲）I 历年真题",
     category: "历年真题",
     description: "微积分（甲）相关历年试题与复习资料。",
     status: "已上传",
-    url: DRIVE_FOLDER_URL,
+    url: "https://drive.google.com/drive/folders/1NVZ7tLd_ot-tXv2bRvLUI4rpunx0rZ03?usp=drive_link",
     updatedAt: "2026-04-28"
+  },
+  {
+    title: "25秋冬微积分研讨班题目",
+    category: "微积分研讨班",
+    description: "研讨班题目、讨论材料与问题汇总。",
+    status: "更新中",
+    url: "https://drive.google.com/drive/folders/1adRcmbelXbUOYfcwv87aWdag2qKqYRY7?usp=drive_link",
+    updatedAt: "2026-04-29"
   },
   {
     title: "一元微积分核心性质梳理",
