@@ -1,263 +1,251 @@
 const DRIVE_FOLDER_URL =
   "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link";
-
 const DRIVE_INDEX_PATH = "data/drive-index.json";
 
-const categories = [
-  "全部",
-  "课程笔记",
-  "历年真题",
-  "微积分研讨班",
-  "高等数学竞赛",
-  "其他资料"
-];
+const fallbackTree = {
+  title: "全部资料",
+  type: "folder",
+  url: DRIVE_FOLDER_URL,
+  updatedAt: "",
+  children: []
+};
 
-const fallbackData = [
-  {
-    title: "MATH1135G-微积分（甲）I 课程笔记",
-    category: "课程笔记",
-    description: "课堂笔记、重点整理与阶段复习资料，持续更新。",
-    status: "更新中",
-    url: "https://drive.google.com/drive/folders/1Qs_FlwJ5Ngf6Zs_RW20VCpC5OGkBW8Be?usp=drive_link",
-    updatedAt: "2026-04-30"
-  },
-  {
-    title: "MATH1135G-微积分（甲）I 历年真题",
-    category: "历年真题",
-    description: "微积分（甲）相关历年试题与复习资料。",
-    status: "已上传",
-    url: "https://drive.google.com/drive/folders/1NVZ7tLd_ot-tXv2bRvLUI4rpunx0rZ03?usp=drive_link",
-    updatedAt: "2026-04-28"
-  },
-  {
-    title: "25秋冬微积分研讨班题目",
-    category: "微积分研讨班",
-    description: "研讨班题目、讨论材料与问题汇总。",
-    status: "更新中",
-    url: "https://drive.google.com/drive/folders/1adRcmbelXbUOYfcwv87aWdag2qKqYRY7?usp=drive_link",
-    updatedAt: "2026-04-29"
-  },
-  {
-    title: "一元微积分核心性质梳理",
-    category: "其他资料",
-    description: "一元微积分中常用性质、定理与证明思路整理。",
-    status: "制作中",
-    url: DRIVE_FOLDER_URL,
-    updatedAt: "2026-04-27"
-  },
-  {
-    title: "历年浙江省高等数学竞赛真题",
-    category: "高等数学竞赛",
-    description: "浙江省高等数学竞赛相关真题、训练资料与整理。",
-    status: "制作中",
-    url: DRIVE_FOLDER_URL,
-    updatedAt: "2026-04-26"
-  }
-];
+let rootTree = fallbackTree;
+let currentFolder = fallbackTree;
+let currentPath = [fallbackTree];
+let activeSearch = "";
 
-let notes = fallbackData.slice();
-let currentCategory = "全部";
-let currentKeyword = "";
-
-const notesContainer = document.getElementById("notesContainer");
-const recentUpdates = document.getElementById("recentUpdates");
 const searchInput = document.getElementById("searchInput");
-const filterButtons = document.getElementById("filterButtons");
-const sidebarCategories = document.getElementById("sidebarCategories");
+const backBtn = document.getElementById("backBtn");
+const breadcrumb = document.getElementById("breadcrumb");
+const folderTree = document.getElementById("folderTree");
+const contentList = document.getElementById("contentList");
+const viewTitle = document.getElementById("viewTitle");
 const resultCount = document.getElementById("resultCount");
+const openAllBtn = document.getElementById("openAllBtn");
 
-function createCategoryButton(name, onClick) {
-  const btn = document.createElement("button");
-  btn.className = "category-btn";
-  btn.textContent = name;
-  btn.addEventListener("click", () => onClick(name));
-  return btn;
-}
+function normalizeNode(node) {
+  const type = node?.type === "file" ? "file" : "folder";
+  const normalized = {
+    title: node?.title || "未命名",
+    type,
+    url: node?.url || DRIVE_FOLDER_URL,
+    updatedAt: node?.updatedAt || ""
+  };
 
-function matchesFilters(note) {
-  const inCategory = currentCategory === "全部" || note.category === currentCategory;
-  const keyword = currentKeyword.trim().toLowerCase();
-  const pathText = (note.path || []).join(" ").toLowerCase();
-  const inKeyword =
-    !keyword ||
-    note.title.toLowerCase().includes(keyword) ||
-    note.category.toLowerCase().includes(keyword) ||
-    pathText.includes(keyword) ||
-    note.description.toLowerCase().includes(keyword);
-  return inCategory && inKeyword;
-}
-
-function getActiveCategories() {
-  const dynamicCategories = [...new Set(notes.map((note) => note.category))];
-  return ["全部", ...dynamicCategories];
-}
-
-function renderCategories() {
-  filterButtons.innerHTML = "";
-  sidebarCategories.innerHTML = "";
-
-  getActiveCategories().forEach((name) => {
-    const clickHandler = (selected) => {
-      currentCategory = selected;
-      renderAll();
-    };
-
-    const topBtn = createCategoryButton(name, clickHandler);
-    const sideBtn = createCategoryButton(name, clickHandler);
-
-    if (name === currentCategory) {
-      topBtn.classList.add("active");
-      sideBtn.classList.add("active");
-    }
-
-    filterButtons.appendChild(topBtn);
-    sidebarCategories.appendChild(sideBtn);
-  });
-}
-
-function renderNotes() {
-  notesContainer.innerHTML = "";
-  const filtered = notes.filter(matchesFilters);
-
-  resultCount.textContent = `共 ${filtered.length} 条资料`;
-
-  if (filtered.length === 0) {
-    notesContainer.innerHTML = "<p class='muted'>没有匹配的资料，请更换关键词或分类。</p>";
-    return;
+  if (type === "folder") {
+    normalized.children = Array.isArray(node?.children)
+      ? node.children.map((child) => normalizeNode(child))
+      : [];
   }
 
-  const grouped = new Map();
-  filtered.forEach((note) => {
-    const level1 = note.path?.[0] || note.category || "其他资料";
-    const level2 = note.path?.[1] || "未分组";
-    if (!grouped.has(level1)) grouped.set(level1, new Map());
-    const level2Map = grouped.get(level1);
-    if (!level2Map.has(level2)) level2Map.set(level2, []);
-    level2Map.get(level2).push(note);
-  });
-
-  grouped.forEach((level2Map, level1) => {
-    const group1Title = document.createElement("h3");
-    group1Title.className = "group-title";
-    group1Title.textContent = level1;
-    notesContainer.appendChild(group1Title);
-
-    level2Map.forEach((items, level2) => {
-      const group2Title = document.createElement("h4");
-      group2Title.className = "subgroup-title";
-      group2Title.textContent = level2;
-      notesContainer.appendChild(group2Title);
-
-      items.forEach((note) => {
-        const article = document.createElement("article");
-        article.className = "note-item";
-        article.innerHTML = `
-          <h4>${note.title}</h4>
-          <p class="meta">分类：${note.category}</p>
-          <p class="meta">路径：${(note.path || []).join(" / ") || "未提供"}</p>
-          <p class="desc">${note.description}</p>
-          <span class="tag">${note.status}</span>
-          <p class="meta">更新：${note.updatedAt}</p>
-          <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开资料</a>
-        `;
-        notesContainer.appendChild(article);
-      });
-    });
-  });
-}
-
-function renderRecentUpdates() {
-  recentUpdates.innerHTML = "";
-  notes
-    .slice()
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-    .slice(0, 5)
-    .forEach((item) => {
-      const li = document.createElement("li");
-      const pathText = (item.path || []).join(" / ");
-      li.innerHTML = `<strong>${item.updatedAt}</strong> · ${item.title}${pathText ? `（${pathText}）` : ""}`;
-      recentUpdates.appendChild(li);
-    });
-}
-
-function renderAll() {
-  renderCategories();
-  renderNotes();
-  renderRecentUpdates();
-}
-
-function normalizeDriveTree(rootNode) {
-  const normalized = [];
-
-  function walk(node, path) {
-    if (!node) return;
-
-    if (Array.isArray(node)) {
-      node.forEach((item) => walk(item, path));
-      return;
-    }
-
-    const nodeType =
-      node.type ||
-      (Array.isArray(node.children) ? "folder" : node.url ? "file" : "");
-
-    if (!nodeType) return;
-
-    if (nodeType === "folder") {
-      const nextPath = path.concat(node.title || "未命名文件夹");
-      (node.children || []).forEach((child) => walk(child, nextPath));
-      return;
-    }
-
-    if (nodeType === "file") {
-      const category = node.category || path[0] || "其他资料";
-      normalized.push({
-        title: node.title || "未命名 PDF",
-        category,
-        description: `来源：${path.join(" / ")}`,
-        status: "自动同步",
-        url: node.url || DRIVE_FOLDER_URL,
-        updatedAt: node.updatedAt || "1970-01-01",
-        path: path.slice()
-      });
-    }
-  }
-
-  if (rootNode?.children) {
-    walk(rootNode.children, []);
-  } else {
-    walk(rootNode, []);
-  }
   return normalized;
 }
 
-async function loadNotesData() {
-  if (!DRIVE_INDEX_PATH.trim()) {
-    notes = fallbackData.slice();
+function normalizeRootTree(rawTree) {
+  const normalized = normalizeNode(rawTree);
+  if (normalized.type !== "folder") return { ...fallbackTree };
+  normalized.title = "全部资料";
+  if (!Array.isArray(normalized.children)) normalized.children = [];
+  return normalized;
+}
+
+function listFolders(node, path = [], acc = []) {
+  const nextPath = [...path, node];
+  acc.push({ node, path: nextPath });
+  (node.children || []).forEach((child) => {
+    if (child.type === "folder") listFolders(child, nextPath, acc);
+  });
+  return acc;
+}
+
+function setCurrentFolder(path) {
+  currentPath = path;
+  currentFolder = path[path.length - 1];
+  render();
+}
+
+function renderFolderTree() {
+  folderTree.innerHTML = "";
+  listFolders(rootTree).forEach(({ node, path }) => {
+    const item = document.createElement("div");
+    item.className = "tree-item";
+    item.style.paddingLeft = `${(path.length - 1) * 14 + 6}px`;
+    item.textContent = `📁 ${node.title}`;
+    if (node === currentFolder) item.classList.add("active");
+    item.addEventListener("click", () => setCurrentFolder(path));
+    folderTree.appendChild(item);
+  });
+}
+
+function renderBreadcrumb() {
+  breadcrumb.innerHTML = "";
+  currentPath.forEach((node, idx) => {
+    if (idx > 0) breadcrumb.append(" / ");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = node.title;
+    button.addEventListener("click", () => setCurrentFolder(currentPath.slice(0, idx + 1)));
+    breadcrumb.appendChild(button);
+  });
+}
+
+function sortChildren(children) {
+  return [...children].sort((a, b) => {
+    if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
+    return a.title.localeCompare(b.title, "zh-Hans-CN");
+  });
+}
+
+function renderFolderView() {
+  viewTitle.textContent = currentFolder.title;
+  const children = sortChildren(currentFolder.children || []);
+  resultCount.textContent = `共 ${children.length} 项`;
+  contentList.innerHTML = "";
+
+  if (rootTree.children.length === 0 && currentFolder === rootTree) {
+    contentList.innerHTML = '<div class="row"><span class="muted">目录尚未同步。</span></div>';
     return;
   }
 
-  try {
-    const response = await fetch(DRIVE_INDEX_PATH, { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (children.length === 0) {
+    contentList.innerHTML = '<div class="row"><span class="muted">该文件夹为空。</span></div>';
+    return;
+  }
 
-    const data = await response.json();
-    const driveNotes = normalizeDriveTree(data);
-    notes = driveNotes.length > 0 ? driveNotes : fallbackData.slice();
-  } catch (error) {
-    console.warn("读取静态缓存目录失败，使用备用目录：", error);
-    notes = fallbackData.slice();
+  children.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const nameCell = document.createElement(item.type === "folder" ? "button" : "span");
+    nameCell.className = item.type === "folder" ? "name-btn" : "";
+    nameCell.textContent = `${item.type === "folder" ? "📁" : "📄"} ${item.title}`;
+    if (item.type === "folder") {
+      nameCell.type = "button";
+      nameCell.addEventListener("click", () => setCurrentFolder([...currentPath, item]));
+    }
+
+    const typeCell = document.createElement("span");
+    typeCell.className = "type-pill";
+    typeCell.textContent = item.type === "folder" ? "文件夹" : "PDF";
+
+    const updatedCell = document.createElement("span");
+    updatedCell.className = "muted";
+    updatedCell.textContent = item.updatedAt || "-";
+
+    const action = document.createElement("a");
+    action.className = "btn ghost";
+    action.href = item.url || DRIVE_FOLDER_URL;
+    action.target = "_blank";
+    action.rel = "noopener noreferrer";
+    action.textContent = "打开";
+
+    row.append(nameCell, typeCell, updatedCell, action);
+    contentList.appendChild(row);
+  });
+}
+
+function searchTree(keyword) {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) return [];
+
+  const results = [];
+  function walk(node, path) {
+    const currentPathNodes = [...path, node];
+    if (node !== rootTree && node.title.toLowerCase().includes(normalizedKeyword)) {
+      results.push({ node, path: currentPathNodes });
+    }
+    (node.children || []).forEach((child) => walk(child, currentPathNodes));
+  }
+
+  walk(rootTree, []);
+  return results;
+}
+
+function renderSearchResults() {
+  const results = searchTree(activeSearch);
+  viewTitle.textContent = `搜索：${activeSearch}`;
+  resultCount.textContent = `共 ${results.length} 项`;
+  contentList.innerHTML = "";
+
+  if (results.length === 0) {
+    contentList.innerHTML = '<div class="row"><span class="muted">没有匹配结果。</span></div>';
+    return;
+  }
+
+  results.forEach(({ node, path }) => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const name = document.createElement("span");
+    name.textContent = `${node.type === "folder" ? "📁" : "📄"} ${node.title}`;
+
+    const type = document.createElement("span");
+    type.className = "type-pill";
+    type.textContent = node.type === "folder" ? "文件夹" : "PDF";
+
+    const pathNode = document.createElement("span");
+    pathNode.className = "muted";
+    pathNode.textContent = path.slice(1, -1).map((item) => item.title).join(" / ") || "-";
+
+    const action = document.createElement(node.type === "folder" ? "button" : "a");
+    action.className = "btn ghost";
+    if (node.type === "folder") {
+      action.type = "button";
+      action.textContent = "进入";
+      action.addEventListener("click", () => {
+        activeSearch = "";
+        searchInput.value = "";
+        setCurrentFolder(path);
+      });
+    } else {
+      action.href = node.url || DRIVE_FOLDER_URL;
+      action.target = "_blank";
+      action.rel = "noopener noreferrer";
+      action.textContent = "打开";
+    }
+
+    row.append(name, type, pathNode, action);
+    contentList.appendChild(row);
+  });
+}
+
+function render() {
+  backBtn.disabled = currentPath.length <= 1;
+  renderFolderTree();
+  renderBreadcrumb();
+  if (activeSearch) {
+    renderSearchResults();
+  } else {
+    renderFolderView();
   }
 }
 
+async function loadTree() {
+  try {
+    const res = await fetch(DRIVE_INDEX_PATH, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    rootTree = normalizeRootTree(data);
+  } catch (error) {
+    console.warn("读取 drive-index.json 失败，使用空目录 fallbackTree", error);
+    rootTree = { ...fallbackTree, children: [] };
+  }
+
+  openAllBtn.href = rootTree.url || DRIVE_FOLDER_URL;
+  currentFolder = rootTree;
+  currentPath = [rootTree];
+  render();
+}
+
 searchInput.addEventListener("input", (event) => {
-  currentKeyword = event.target.value;
-  renderNotes();
+  activeSearch = event.target.value.trim();
+  render();
 });
 
-loadNotesData().finally(() => {
-  if (!getActiveCategories().includes(currentCategory)) {
-    currentCategory = "全部";
-  }
-  renderAll();
+backBtn.addEventListener("click", () => {
+  if (currentPath.length <= 1) return;
+  setCurrentFolder(currentPath.slice(0, -1));
 });
+
+loadTree();
