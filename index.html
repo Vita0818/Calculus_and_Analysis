@@ -6,89 +6,50 @@
     <title>Vita's 数学分析小站</title>
     <meta
       name="description"
-      content="Vita 的数学分析/微积分 PDF 笔记导航站，资料托管于 Google Drive。"
+      content="Vita 的数学分析/微积分 PDF 浏览站，资料托管于 Google Drive。"
     />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header class="top-hero">
-      <div class="formula-bg" aria-hidden="true">
-        <span>Taylor's formula</span>
-        <span>Stokes' theorem</span>
-        <span>Green's theorem</span>
-        <span>Gauss' theorem</span>
-        <span>∫ₐᵇ f(x) dx</span>
-        <span>∇ · F</span>
-        <span>e^{iπ}+1=0</span>
-        <span>limₓ→₀ sin x / x = 1</span>
-        <span>Σ 1/n² = π²/6</span>
-      </div>
-
-      <div class="hero-main card">
-        <div class="brand">
-          <img src="assets/avatar.png" alt="Vita 头像" class="avatar" />
-          <div>
-            <h1>Vita's 数学分析小站</h1>
-            <p>祝玩得开心！</p>
-          </div>
+    <header class="site-header card">
+      <div class="brand">
+        <img src="assets/avatar.png" alt="Vita 头像" class="avatar" />
+        <div>
+          <h1>Vita's 数学分析小站</h1>
+          <p>祝玩得开心！</p>
         </div>
-
-        <a
-          class="btn folder-btn"
-          href="https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          打开全部资料文件夹
-        </a>
       </div>
-
-      <div class="toolbar card">
-        <h2>资料导航</h2>
-        <input
-          id="searchInput"
-          type="search"
-          placeholder="搜索标题 / 分类 / 说明..."
-          aria-label="搜索资料"
-        />
-        <div id="filterButtons" class="filter-buttons"></div>
-      </div>
+      <a
+        id="openAllBtn"
+        class="btn"
+        href="https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        打开全部资料文件夹
+      </a>
     </header>
+
+    <section class="toolbar card">
+      <input id="searchInput" type="search" placeholder="搜索文件夹或 PDF..." aria-label="搜索" />
+      <button id="backBtn" class="btn ghost" type="button">返回上一级</button>
+      <nav id="breadcrumb" class="breadcrumb" aria-label="当前路径"></nav>
+    </section>
 
     <main class="layout">
       <aside class="sidebar card">
-        <h3>分类</h3>
-        <nav id="sidebarCategories" class="category-list" aria-label="资料分类"></nav>
+        <h2>文件夹</h2>
+        <nav id="folderTree" class="folder-tree" aria-label="完整文件夹树"></nav>
       </aside>
 
-      <section class="content-area">
-        <section class="card section">
-          <div class="section-title-row">
-            <h3>资料列表</h3>
-            <span id="resultCount" class="muted"></span>
-          </div>
-          <div id="notesContainer" class="notes-grid"></div>
-        </section>
-
-        <section class="card section">
-          <h3>最近更新</h3>
-          <ul id="recentUpdates" class="recent-list"></ul>
-        </section>
-
-        <section class="card section">
-          <h3>使用说明</h3>
-          <ul class="help-list">
-            <li>本站读取仓库内缓存的 Google Drive 目录树（<code>data/drive-index.json</code>）；如果读取失败，会显示内置备用目录。</li>
-            <li>目录由后台定时任务自动更新；上传到 Google Drive 后，通常需要等待下一次同步才会显示。</li>
-            <li>若无法打开链接，请检查网络环境或稍后重试。</li>
-          </ul>
-        </section>
+      <section class="file-view card">
+        <div class="view-head">
+          <h2 id="viewTitle">全部资料</h2>
+          <span id="resultCount" class="muted"></span>
+        </div>
+        <div id="contentList" class="content-list"></div>
       </section>
     </main>
-
-    <footer>
-      © Vita. Built with GitHub Pages.
-    </footer>
 
     <script src="script.js"></script>
   </body>

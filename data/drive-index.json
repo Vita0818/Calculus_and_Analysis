@@ -1,46 +1,49 @@
 {
-  "title": "Vita 数学资料总目录",
+  "title": "root",
   "type": "folder",
   "url": "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link",
-  "category": "根目录",
   "updatedAt": "2026-04-30",
-  "path": [],
   "children": [
     {
-      "title": "MATH1135G-微积分（甲）I",
+      "title": "MATH1135G-微积分（甲）",
       "type": "folder",
       "url": "https://drive.google.com/drive/folders/1Qs_FlwJ5Ngf6Zs_RW20VCpC5OGkBW8Be?usp=drive_link",
-      "category": "课程笔记",
       "updatedAt": "2026-04-30",
-      "path": ["MATH1135G-微积分（甲）I"],
       "children": [
         {
-          "title": "第01讲 极限与连续.pdf",
-          "type": "file",
-          "url": "https://drive.google.com/file/d/1-example-note/view",
-          "category": "课程笔记",
+          "title": "笔记",
+          "type": "folder",
+          "url": "https://drive.google.com/drive/folders/1example-note-folder",
           "updatedAt": "2026-04-30",
-          "path": ["MATH1135G-微积分（甲）I", "课程讲义"],
+          "children": [
+            {
+              "title": "第01讲 极限与连续.pdf",
+              "type": "file",
+              "url": "https://drive.google.com/file/d/1-example-note/view",
+              "updatedAt": "2026-04-30"
+            }
+          ]
+        },
+        {
+          "title": "作业",
+          "type": "folder",
+          "url": "https://drive.google.com/drive/folders/1example-homework-folder",
+          "updatedAt": "2026-04-29",
           "children": []
         }
       ]
     },
     {
-      "title": "微积分（甲）I 历年真题",
+      "title": "微积分（甲）历年真题",
       "type": "folder",
       "url": "https://drive.google.com/drive/folders/1NVZ7tLd_ot-tXv2bRvLUI4rpunx0rZ03?usp=drive_link",
-      "category": "历年真题",
       "updatedAt": "2026-04-28",
-      "path": ["微积分（甲）I 历年真题"],
       "children": [
         {
-          "title": "2024 期末试题.pdf",
+          "title": "2024期末试题.pdf",
           "type": "file",
           "url": "https://drive.google.com/file/d/1-example-exam/view",
-          "category": "历年真题",
-          "updatedAt": "2026-04-28",
-          "path": ["微积分（甲）I 历年真题", "期末试题"],
-          "children": []
+          "updatedAt": "2026-04-28"
         }
       ]
     }
