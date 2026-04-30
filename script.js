@@ -1,6 +1,8 @@
 const DRIVE_FOLDER_URL =
   "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link";
 
+const DRIVE_INDEX_URL = "";
+
 const categories = [
   "全部",
   "课程笔记",
@@ -10,14 +12,7 @@ const categories = [
   "其他资料"
 ];
 
-/**
- * 资料条目统一在这里维护。
- * 你后续新增 PDF 时：
- * 1) 复制一个对象并修改 title/category/description/status/updatedAt。
- * 2) 把 url 替换成对应 PDF 的 Google Drive 单文件链接。
- * 3) category 请使用 categories 里的值，便于筛选。
- */
-const notes = [
+const fallbackData = [
   {
     title: "MATH1135G-微积分（甲）I 课程笔记",
     category: "课程笔记",
@@ -60,6 +55,7 @@ const notes = [
   }
 ];
 
+let notes = fallbackData.slice();
 let currentCategory = "全部";
 let currentKeyword = "";
 
@@ -89,11 +85,16 @@ function matchesFilters(note) {
   return inCategory && inKeyword;
 }
 
+function getActiveCategories() {
+  const dynamicCategories = [...new Set(notes.map((note) => note.category))];
+  return ["全部", ...dynamicCategories];
+}
+
 function renderCategories() {
   filterButtons.innerHTML = "";
   sidebarCategories.innerHTML = "";
 
-  categories.forEach((name) => {
+  getActiveCategories().forEach((name) => {
     const clickHandler = (selected) => {
       currentCategory = selected;
       renderAll();
@@ -157,9 +158,62 @@ function renderAll() {
   renderRecentUpdates();
 }
 
+function normalizeDriveTree(rootNode) {
+  const normalized = [];
+
+  function walk(node, path) {
+    if (!node || !node.type) return;
+
+    if (node.type === "folder") {
+      const nextPath = path.concat(node.title || "未命名文件夹");
+      (node.children || []).forEach((child) => walk(child, nextPath));
+      return;
+    }
+
+    if (node.type === "file") {
+      const category = node.category || path[0] || "其他资料";
+      normalized.push({
+        title: node.title || "未命名 PDF",
+        category,
+        description: `来源：${path.join(" / ")}`,
+        status: "自动同步",
+        url: node.url || DRIVE_FOLDER_URL,
+        updatedAt: node.updatedAt || "1970-01-01"
+      });
+    }
+  }
+
+  walk(rootNode, []);
+  return normalized;
+}
+
+async function loadNotesData() {
+  if (!DRIVE_INDEX_URL.trim()) {
+    notes = fallbackData.slice();
+    return;
+  }
+
+  try {
+    const response = await fetch(DRIVE_INDEX_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    const driveNotes = normalizeDriveTree(data);
+    notes = driveNotes.length > 0 ? driveNotes : fallbackData.slice();
+  } catch (error) {
+    console.warn("读取 Google Drive 自动目录失败，使用备用目录：", error);
+    notes = fallbackData.slice();
+  }
+}
+
 searchInput.addEventListener("input", (event) => {
   currentKeyword = event.target.value;
   renderNotes();
 });
 
-renderAll();
+loadNotesData().finally(() => {
+  if (!getActiveCategories().includes(currentCategory)) {
+    currentCategory = "全部";
+  }
+  renderAll();
+});
