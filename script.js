@@ -3,34 +3,11 @@ const DRIVE_FOLDER_URL =
 const DRIVE_INDEX_PATH = "data/drive-index.json";
 
 const fallbackTree = {
-  title: "root",
+  title: "全部资料",
   type: "folder",
   url: DRIVE_FOLDER_URL,
-  updatedAt: "2026-04-30",
-  children: [
-    {
-      title: "MATH1135G-微积分（甲）",
-      type: "folder",
-      url: "https://drive.google.com/drive/folders/1Qs_FlwJ5Ngf6Zs_RW20VCpC5OGkBW8Be?usp=drive_link",
-      updatedAt: "2026-04-30",
-      children: [
-        {
-          title: "笔记",
-          type: "folder",
-          url: "https://drive.google.com/drive/folders/1example-note-folder",
-          updatedAt: "2026-04-30",
-          children: [
-            {
-              title: "第01讲 极限与连续.pdf",
-              type: "file",
-              url: "https://drive.google.com/file/d/1-example-note/view",
-              updatedAt: "2026-04-30"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  updatedAt: "",
+  children: []
 };
 
 let rootTree = fallbackTree;
@@ -56,9 +33,23 @@ function safeNode(node) {
 
 function normalizeTree(node) {
   const root = safeNode(node);
-  if (root.type !== "folder") return safeNode(fallbackTree);
-  root.children = root.children.map((child) => normalizeTree(child));
+  if (root.type !== "folder") return null;
+  root.children = root.children
+    .map((child) => normalizeTree(child))
+    .filter(Boolean);
   return root;
+}
+
+function buildVisibleRoot(rawRoot) {
+  const normalizedRoot = normalizeTree(rawRoot);
+  if (!normalizedRoot) return safeNode(fallbackTree);
+  return {
+    title: "全部资料",
+    type: "folder",
+    url: normalizedRoot.url || DRIVE_FOLDER_URL,
+    updatedAt: normalizedRoot.updatedAt || "",
+    children: normalizedRoot.children || []
+  };
 }
 
 function listFolders(node, path = [], acc = []) {
@@ -116,7 +107,11 @@ function renderFolderView() {
 
   contentList.innerHTML = "";
   if (children.length === 0) {
-    contentList.innerHTML = '<div class="row"><span class="muted">该文件夹为空。</span></div>';
+    const emptyMessage =
+      currentFolder === rootTree
+        ? "目录尚未同步。请先运行 GitHub Actions 更新 Google Drive 目录。"
+        : "该文件夹为空。";
+    contentList.innerHTML = `<div class="row"><span class="muted">${emptyMessage}</span></div>`;
     return;
   }
 
@@ -233,10 +228,10 @@ async function loadTree() {
     const res = await fetch(DRIVE_INDEX_PATH, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    rootTree = normalizeTree(data);
+    rootTree = buildVisibleRoot(data);
   } catch (error) {
     console.warn("读取 drive-index.json 失败，使用 fallbackTree", error);
-    rootTree = normalizeTree(fallbackTree);
+    rootTree = safeNode(fallbackTree);
   }
 
   openAllBtn.href = rootTree.url || DRIVE_FOLDER_URL;
