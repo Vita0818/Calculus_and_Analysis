@@ -149,31 +149,12 @@ function renderFolderView() {
       currentFolder === rootTree
         ? "目录尚未同步。请先运行 GitHub Actions 更新 Google Drive 目录。"
         : "该文件夹为空。";
-    contentList.innerHTML = `<div class="row"><span class="muted">${emptyMessage}</span></div>`;
+    contentList.innerHTML = `<div class="empty-message muted">${emptyMessage}</div>`;
     return;
   }
 
   const children = sortChildren(folderChildren);
   children.forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "row";
-
-    const nameCell = document.createElement(item.type === "folder" ? "button" : "span");
-    nameCell.className = item.type === "folder" ? "name-btn" : "";
-    nameCell.textContent = `${item.type === "folder" ? "📁" : "📄"} ${item.title}`;
-    if (item.type === "folder") {
-      nameCell.type = "button";
-      nameCell.addEventListener("click", () => setCurrentFolderByPathKey(item.pathKey));
-    }
-
-    const typeCell = document.createElement("span");
-    typeCell.className = "type-pill";
-    typeCell.textContent = item.type === "folder" ? "文件夹" : "PDF";
-
-    const updatedCell = document.createElement("span");
-    updatedCell.className = "muted";
-    updatedCell.textContent = item.updatedAt || "-";
-
     const action = document.createElement("a");
     action.className = "btn ghost";
     action.href = item.url || DRIVE_FOLDER_URL;
@@ -181,9 +162,40 @@ function renderFolderView() {
     action.rel = "noopener noreferrer";
     action.textContent = "打开";
 
-    row.append(nameCell, typeCell, updatedCell, action);
-    contentList.appendChild(row);
+    const metaText = formatMeta(item);
+    contentList.appendChild(createCard(item, metaText, action));
   });
+}
+
+
+function formatMeta(item, fallbackPath = "") {
+  const typeLabel = item.type === "folder" ? "文件夹" : "PDF";
+  const timeLabel = item.updatedAt || fallbackPath || "-";
+  return `${typeLabel} · ${timeLabel}`;
+}
+
+function createCard(item, metaText, actionNode) {
+  const card = document.createElement("div");
+  card.className = "file-card";
+
+  const main = document.createElement("div");
+  main.className = "file-main";
+
+  const title = document.createElement(item.type === "folder" ? "button" : "div");
+  title.className = item.type === "folder" ? "file-title name-btn" : "file-title";
+  title.textContent = `${item.type === "folder" ? "📁" : "📄"} ${item.title}`;
+  if (item.type === "folder") {
+    title.type = "button";
+    title.addEventListener("click", () => setCurrentFolderByPathKey(item.pathKey));
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "file-meta";
+  meta.textContent = metaText;
+
+  main.append(title, meta);
+  card.append(main, actionNode);
+  return card;
 }
 
 function searchTree(keyword) {
@@ -209,25 +221,11 @@ function renderSearchResults() {
   contentList.innerHTML = "";
 
   if (results.length === 0) {
-    contentList.innerHTML = '<div class="row"><span class="muted">没有匹配结果。</span></div>';
+    contentList.innerHTML = '<div class="empty-message muted">没有匹配结果。</div>';
     return;
   }
 
   results.forEach(({ node, path }) => {
-    const row = document.createElement("div");
-    row.className = "row";
-
-    const name = document.createElement("span");
-    name.textContent = `${node.type === "folder" ? "📁" : "📄"} ${node.title}`;
-
-    const type = document.createElement("span");
-    type.className = "type-pill";
-    type.textContent = node.type === "folder" ? "文件夹" : "PDF";
-
-    const pathNode = document.createElement("span");
-    pathNode.className = "muted";
-    pathNode.textContent = path.slice(1, -1).map((item) => item.title).join(" / ") || "全部资料";
-
     const action = document.createElement(node.type === "folder" ? "button" : "a");
     action.className = "btn ghost";
     if (node.type === "folder") {
@@ -245,8 +243,9 @@ function renderSearchResults() {
       action.textContent = "打开";
     }
 
-    row.append(name, type, pathNode, action);
-    contentList.appendChild(row);
+    const folderPath = path.slice(1, -1).map((item) => item.title).join(" / ") || "全部资料";
+    const metaText = node.type === "folder" ? `文件夹 · ${folderPath}` : formatMeta(node, folderPath);
+    contentList.appendChild(createCard(node, metaText, action));
   });
 }
 
