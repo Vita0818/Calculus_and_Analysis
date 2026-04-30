@@ -3,7 +3,7 @@ const DRIVE_FOLDER_URL =
 
 const categories = [
   "全部",
-  "微积分（甲）课程笔记",
+  "课程笔记",
   "微积分研讨班",
   "历年真题",
   "高等数学竞赛",
@@ -19,44 +19,44 @@ const categories = [
  */
 const notes = [
   {
-    title: "25秋冬微积分（甲）课程笔记",
-    category: "微积分（甲）课程笔记",
-    description: "课堂笔记与重点整理，持续更新中。",
+    title: "MATH1135G-微积分（甲）I 课程笔记",
+    category: "课程笔记",
+    description: "课堂笔记、重点整理与阶段复习资料，持续更新。",
     status: "更新中",
     url: DRIVE_FOLDER_URL,
     updatedAt: "2026-04-30"
   },
   {
-    title: "微积分研讨班精选讲义",
+    title: "25秋冬微积分研讨班题目",
     category: "微积分研讨班",
-    description: "研讨班专题讨论资料与例题汇总。",
+    description: "研讨班题目、讨论材料与问题汇总。",
+    status: "更新中",
+    url: DRIVE_FOLDER_URL,
+    updatedAt: "2026-04-29"
+  },
+  {
+    title: "MATH1135G-微积分（甲）I 历年真题",
+    category: "历年真题",
+    description: "微积分（甲）相关历年试题与复习资料。",
     status: "已上传",
+    url: DRIVE_FOLDER_URL,
+    updatedAt: "2026-04-28"
+  },
+  {
+    title: "一元微积分核心性质梳理",
+    category: "其他资料",
+    description: "一元微积分中常用性质、定理与证明思路整理。",
+    status: "制作中",
     url: DRIVE_FOLDER_URL,
     updatedAt: "2026-04-27"
   },
   {
-    title: "历年真题整理（占位）",
-    category: "历年真题",
-    description: "历年考试真题与答案草稿。",
+    title: "历年浙江省高等数学竞赛真题",
+    category: "高等数学竞赛",
+    description: "浙江省高等数学竞赛相关真题、训练资料与整理。",
     status: "制作中",
     url: DRIVE_FOLDER_URL,
-    updatedAt: "2026-04-25"
-  },
-  {
-    title: "高等数学竞赛资料包",
-    category: "高等数学竞赛",
-    description: "竞赛训练题、解法提示与复盘笔记。",
-    status: "更新中",
-    url: DRIVE_FOLDER_URL,
-    updatedAt: "2026-04-21"
-  },
-  {
-    title: "其他资料与工具",
-    category: "其他资料",
-    description: "拓展阅读、工具清单与学习建议。",
-    status: "已上传",
-    url: DRIVE_FOLDER_URL,
-    updatedAt: "2026-04-18"
+    updatedAt: "2026-04-26"
   }
 ];
 
@@ -132,7 +132,7 @@ function renderNotes() {
       <p class="desc">${note.description}</p>
       <span class="tag">${note.status}</span>
       <p class="meta">更新：${note.updatedAt}</p>
-      <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开 PDF</a>
+      <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开资料</a>
     `;
     notesContainer.appendChild(article);
   });
