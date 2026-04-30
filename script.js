@@ -1,7 +1,7 @@
 const DRIVE_FOLDER_URL =
   "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link";
 
-const DRIVE_INDEX_URL = "";
+const DRIVE_INDEX_URL = "https://script.google.com/macros/s/AKfycbyPXEXoFvFMHs6pJqEK7L8sLreYbVZrgiiktOD3pJq1MIsqTfhKmT_1OEgcgZmeVFv-cw/exec";
 
 const categories = [
   "全部",
