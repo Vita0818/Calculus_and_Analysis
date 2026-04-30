@@ -1,51 +1,7 @@
 {
-  "title": "root",
+  "title": "全部资料",
   "type": "folder",
   "url": "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link",
-  "updatedAt": "2026-04-30",
-  "children": [
-    {
-      "title": "MATH1135G-微积分（甲）",
-      "type": "folder",
-      "url": "https://drive.google.com/drive/folders/1Qs_FlwJ5Ngf6Zs_RW20VCpC5OGkBW8Be?usp=drive_link",
-      "updatedAt": "2026-04-30",
-      "children": [
-        {
-          "title": "笔记",
-          "type": "folder",
-          "url": "https://drive.google.com/drive/folders/1example-note-folder",
-          "updatedAt": "2026-04-30",
-          "children": [
-            {
-              "title": "第01讲 极限与连续.pdf",
-              "type": "file",
-              "url": "https://drive.google.com/file/d/1-example-note/view",
-              "updatedAt": "2026-04-30"
-            }
-          ]
-        },
-        {
-          "title": "作业",
-          "type": "folder",
-          "url": "https://drive.google.com/drive/folders/1example-homework-folder",
-          "updatedAt": "2026-04-29",
-          "children": []
-        }
-      ]
-    },
-    {
-      "title": "微积分（甲）历年真题",
-      "type": "folder",
-      "url": "https://drive.google.com/drive/folders/1NVZ7tLd_ot-tXv2bRvLUI4rpunx0rZ03?usp=drive_link",
-      "updatedAt": "2026-04-28",
-      "children": [
-        {
-          "title": "2024期末试题.pdf",
-          "type": "file",
-          "url": "https://drive.google.com/file/d/1-example-exam/view",
-          "updatedAt": "2026-04-28"
-        }
-      ]
-    }
-  ]
+  "updatedAt": "",
+  "children": []
 }
