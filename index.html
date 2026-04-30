@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vita's 数学分析小站</title>
+    <meta
+      name="description"
+      content="Vita 的数学分析/微积分 PDF 笔记导航站，资料托管于 Google Drive。"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="top-hero">
+      <div class="formula-bg" aria-hidden="true">
+        <span>Taylor's formula</span>
+        <span>Stokes' theorem</span>
+        <span>Green's theorem</span>
+        <span>Gauss' theorem</span>
+        <span>∫ₐᵇ f(x) dx</span>
+        <span>∇ · F</span>
+        <span>e^{iπ}+1=0</span>
+        <span>limₓ→₀ sin x / x = 1</span>
+        <span>Σ 1/n² = π²/6</span>
+      </div>
+
+      <div class="hero-main card">
+        <div class="brand">
+          <img src="assets/avatar.png" alt="Vita 头像" class="avatar" />
+          <div>
+            <h1>Vita's 数学分析小站</h1>
+            <p>公开访问 · 轻量导航 · 持续更新</p>
+          </div>
+        </div>
+
+        <a
+          class="btn folder-btn"
+          href="https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          打开全部资料文件夹
+        </a>
+      </div>
+
+      <div class="toolbar card">
+        <h2>资料导航</h2>
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="搜索标题 / 分类 / 说明..."
+          aria-label="搜索资料"
+        />
+        <div id="filterButtons" class="filter-buttons"></div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar card">
+        <h3>分类</h3>
+        <nav id="sidebarCategories" class="category-list" aria-label="资料分类"></nav>
+      </aside>
+
+      <section class="content-area">
+        <section class="card section">
+          <div class="section-title-row">
+            <h3>资料列表</h3>
+            <span id="resultCount" class="muted"></span>
+          </div>
+          <div id="notesContainer" class="notes-grid"></div>
+        </section>
+
+        <section class="card section">
+          <h3>最近更新</h3>
+          <ul id="recentUpdates" class="recent-list"></ul>
+        </section>
+
+        <section class="card section">
+          <h3>使用说明</h3>
+          <ul class="help-list">
+            <li>PDF 文件托管在 Google Drive，本站仅做导航展示。</li>
+            <li>若无法打开链接，请检查网络环境或稍后重试。</li>
+            <li>本站内容会持续更新，欢迎定期回来查看。</li>
+            <li>当前部分条目为分类入口，具体 PDF 会在后续逐步补充单文件链接。</li>
+          </ul>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      © Vita. Built with GitHub Pages.
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
