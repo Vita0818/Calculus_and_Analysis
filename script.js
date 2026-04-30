@@ -1,23 +1,9 @@
 const DRIVE_FOLDER_URL =
   "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link";
 
-const categories = [
-  "全部",
-  "课程笔记",
-  "历年真题",
-  "微积分研讨班",
-  "高等数学竞赛",
-  "其他资料"
-];
+const DRIVE_INDEX_URL = "";
 
-/**
- * 资料条目统一在这里维护。
- * 你后续新增 PDF 时：
- * 1) 复制一个对象并修改 title/category/description/status/updatedAt。
- * 2) 把 url 替换成对应 PDF 的 Google Drive 单文件链接。
- * 3) category 请使用 categories 里的值，便于筛选。
- */
-const notes = [
+const fallbackData = [
   {
     title: "MATH1135G-微积分（甲）I 课程笔记",
     category: "课程笔记",
@@ -60,6 +46,12 @@ const notes = [
   }
 ];
 
+let notes = fallbackData.map((note) => ({
+  ...note,
+  path: [note.category],
+  topFolder: note.category,
+  secondFolder: "未分类"
+}));
 let currentCategory = "全部";
 let currentKeyword = "";
 
@@ -79,21 +71,22 @@ function createCategoryButton(name, onClick) {
 }
 
 function matchesFilters(note) {
-  const inCategory = currentCategory === "全部" || note.category === currentCategory;
+  const inCategory = currentCategory === "全部" || note.topFolder === currentCategory;
   const keyword = currentKeyword.trim().toLowerCase();
-  const inKeyword =
-    !keyword ||
-    note.title.toLowerCase().includes(keyword) ||
-    note.category.toLowerCase().includes(keyword) ||
-    note.description.toLowerCase().includes(keyword);
+  const pathText = (note.path || []).join(" / ").toLowerCase();
+  const inKeyword = !keyword || note.title.toLowerCase().includes(keyword) || pathText.includes(keyword);
   return inCategory && inKeyword;
+}
+
+function getTopFolders() {
+  return ["全部", ...new Set(notes.map((note) => note.topFolder || "其他资料"))];
 }
 
 function renderCategories() {
   filterButtons.innerHTML = "";
   sidebarCategories.innerHTML = "";
 
-  categories.forEach((name) => {
+  getTopFolders().forEach((name) => {
     const clickHandler = (selected) => {
       currentCategory = selected;
       renderAll();
@@ -112,10 +105,25 @@ function renderCategories() {
   });
 }
 
+function groupNotesByFolders(filteredNotes) {
+  const grouped = new Map();
+
+  filteredNotes.forEach((note) => {
+    const top = note.topFolder || "其他资料";
+    const second = note.secondFolder || "未分类";
+
+    if (!grouped.has(top)) grouped.set(top, new Map());
+    const secondMap = grouped.get(top);
+    if (!secondMap.has(second)) secondMap.set(second, []);
+    secondMap.get(second).push(note);
+  });
+
+  return grouped;
+}
+
 function renderNotes() {
   notesContainer.innerHTML = "";
   const filtered = notes.filter(matchesFilters);
-
   resultCount.textContent = `共 ${filtered.length} 条资料`;
 
   if (filtered.length === 0) {
@@ -123,18 +131,47 @@ function renderNotes() {
     return;
   }
 
-  filtered.forEach((note) => {
-    const article = document.createElement("article");
-    article.className = "note-item";
-    article.innerHTML = `
-      <h4>${note.title}</h4>
-      <p class="meta">分类：${note.category}</p>
-      <p class="desc">${note.description}</p>
-      <span class="tag">${note.status}</span>
-      <p class="meta">更新：${note.updatedAt}</p>
-      <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开资料</a>
-    `;
-    notesContainer.appendChild(article);
+  const grouped = groupNotesByFolders(filtered);
+
+  grouped.forEach((secondMap, topFolder) => {
+    const topSection = document.createElement("section");
+    topSection.className = "folder-group";
+
+    const topTitle = document.createElement("h4");
+    topTitle.textContent = topFolder;
+    topSection.appendChild(topTitle);
+
+    secondMap.forEach((items, secondFolder) => {
+      const subSection = document.createElement("div");
+      subSection.className = "subfolder-group";
+
+      const subTitle = document.createElement("p");
+      subTitle.className = "meta";
+      subTitle.innerHTML = `<strong>${secondFolder}</strong>`;
+      subSection.appendChild(subTitle);
+
+      const grid = document.createElement("div");
+      grid.className = "notes-grid";
+
+      items.forEach((note) => {
+        const article = document.createElement("article");
+        article.className = "note-item";
+        article.innerHTML = `
+          <h4>${note.title}</h4>
+          <p class="meta">路径：${(note.path || []).join(" / ")}</p>
+          <p class="desc">${note.description || "Google Drive 自动同步文件"}</p>
+          <span class="tag">${note.status || "自动同步"}</span>
+          <p class="meta">更新：${note.updatedAt}</p>
+          <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开资料</a>
+        `;
+        grid.appendChild(article);
+      });
+
+      subSection.appendChild(grid);
+      topSection.appendChild(subSection);
+    });
+
+    notesContainer.appendChild(topSection);
   });
 }
 
@@ -146,7 +183,9 @@ function renderRecentUpdates() {
     .slice(0, 5)
     .forEach((item) => {
       const li = document.createElement("li");
-      li.innerHTML = `<strong>${item.updatedAt}</strong> · ${item.title}`;
+      li.innerHTML = `<strong>${item.updatedAt}</strong> · ${item.title}<br><span class="muted">${
+        (item.path || []).join(" / ")
+      }</span>`;
       recentUpdates.appendChild(li);
     });
 }
@@ -157,9 +196,64 @@ function renderAll() {
   renderRecentUpdates();
 }
 
+function normalizeDriveTree(rootNode) {
+  const normalized = [];
+
+  function walk(node, folderPath) {
+    if (!node || !node.type) return;
+
+    if (node.type === "folder") {
+      const nextPath = node.title ? folderPath.concat(node.title) : folderPath;
+      (node.children || []).forEach((child) => walk(child, nextPath));
+      return;
+    }
+
+    if (node.type === "file") {
+      const topFolder = folderPath[0] || "根目录文件";
+      const secondFolder = folderPath[1] || "未分类";
+
+      normalized.push({
+        title: node.title || "未命名 PDF",
+        category: topFolder,
+        topFolder,
+        secondFolder,
+        path: folderPath.length ? folderPath : ["根目录文件"],
+        description: `来源：${folderPath.join(" / ") || "根目录文件"}`,
+        status: "自动同步",
+        url: node.url || DRIVE_FOLDER_URL,
+        updatedAt: node.updatedAt || "1970-01-01"
+      });
+    }
+  }
+
+  // rootNode.title is the overall shared folder, not the first content-level folder.
+  (rootNode.children || []).forEach((child) => walk(child, []));
+  return normalized;
+}
+
+async function loadNotesData() {
+  if (!DRIVE_INDEX_URL.trim()) return;
+
+  try {
+    const response = await fetch(DRIVE_INDEX_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    const driveNotes = normalizeDriveTree(data);
+    if (driveNotes.length > 0) {
+      notes = driveNotes;
+    }
+  } catch (error) {
+    console.warn("读取 Google Drive 自动目录失败，使用备用目录：", error);
+  }
+}
+
 searchInput.addEventListener("input", (event) => {
   currentKeyword = event.target.value;
   renderNotes();
 });
 
-renderAll();
+loadNotesData().finally(() => {
+  if (!getTopFolders().includes(currentCategory)) currentCategory = "全部";
+  renderAll();
+});
