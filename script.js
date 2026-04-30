@@ -1,7 +1,7 @@
 const DRIVE_FOLDER_URL =
   "https://drive.google.com/drive/folders/1onVR2v7-_WzvPypCS8r8NX8wMphymSpb?usp=drive_link";
 
-const DRIVE_INDEX_URL = "https://script.google.com/macros/s/AKfycbyPXEXoFvFMHs6pJqEK7L8sLreYbVZrgiiktOD3pJq1MIsqTfhKmT_1OEgcgZmeVFv-cw/exec";
+const DRIVE_INDEX_PATH = "data/drive-index.json";
 
 const categories = [
   "全部",
@@ -232,20 +232,20 @@ function normalizeDriveTree(rootNode) {
 }
 
 async function loadNotesData() {
-  if (!DRIVE_INDEX_URL.trim()) {
+  if (!DRIVE_INDEX_PATH.trim()) {
     notes = fallbackData.slice();
     return;
   }
 
   try {
-    const response = await fetch(DRIVE_INDEX_URL, { cache: "no-store" });
+    const response = await fetch(DRIVE_INDEX_PATH, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
     const driveNotes = normalizeDriveTree(data);
     notes = driveNotes.length > 0 ? driveNotes : fallbackData.slice();
   } catch (error) {
-    console.warn("读取 Google Drive 自动目录失败，使用备用目录：", error);
+    console.warn("读取静态缓存目录失败，使用备用目录：", error);
     notes = fallbackData.slice();
   }
 }

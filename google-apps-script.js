@@ -5,6 +5,8 @@
  * 1) Create a new Apps Script project.
  * 2) Paste this file content into Code.gs.
  * 3) Deploy as Web App (Execute as: Me, Who has access: Anyone).
+ * 4) Copy the deployed Web App URL to GitHub repository secret: DRIVE_INDEX_SOURCE_URL.
+ *    Frontend should not call this URL directly; GitHub Actions will sync it into data/drive-index.json.
  */
 const ROOT_FOLDER_ID = "1onVR2v7-_WzvPypCS8r8NX8wMphymSpb";
 
