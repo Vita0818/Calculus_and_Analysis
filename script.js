@@ -14,6 +14,7 @@ let rootTree = fallbackTree;
 let currentFolder = fallbackTree;
 let currentPath = [fallbackTree];
 let activeSearch = "";
+let nodeMap = new Map();
 
 const searchInput = document.getElementById("searchInput");
 const backBtn = document.getElementById("backBtn");
@@ -52,31 +53,60 @@ function buildVisibleRoot(rawRoot) {
   };
 }
 
-function listFolders(node, path = [], acc = []) {
-  const nextPath = [...path, node];
-  acc.push({ node, path: nextPath });
+function buildRuntimeTree(node, parent = null, parentPath = [], parentPathKey = "root") {
+  const currentPath = [...parentPath, node.title];
+  const currentPathKey = parent ? `${parentPathKey}/${node.title}` : "root";
+
+  node.parent = parent;
+  node.path = currentPath;
+  node.pathKey = currentPathKey;
+  node.depth = parent ? parent.depth + 1 : 0;
+
+  nodeMap.set(node.pathKey, node);
+
+  if (node.type === "folder") {
+    node.children = (node.children || []).map((child) => buildRuntimeTree(child, node, currentPath, currentPathKey));
+  }
+
+  return node;
+}
+
+function buildPathFromNode(node) {
+  const path = [];
+  let cursor = node;
+  while (cursor) {
+    path.unshift(cursor);
+    cursor = cursor.parent || null;
+  }
+  return path;
+}
+
+function listFolders(node, acc = []) {
+  acc.push(node);
   (node.children || []).forEach((child) => {
-    if (child.type === "folder") listFolders(child, nextPath, acc);
+    if (child.type === "folder") listFolders(child, acc);
   });
   return acc;
 }
 
-function setCurrentFolder(path) {
-  currentPath = path;
-  currentFolder = path[path.length - 1];
+function setCurrentFolderByPathKey(pathKey) {
+  const target = nodeMap.get(pathKey);
+  if (!target || target.type !== "folder") return;
+  currentFolder = target;
+  currentPath = buildPathFromNode(target);
   render();
 }
 
 function renderFolderTree() {
   folderTree.innerHTML = "";
   const folders = listFolders(rootTree);
-  folders.forEach(({ node, path }) => {
+  folders.forEach((node) => {
     const item = document.createElement("div");
     item.className = "tree-item";
-    item.style.paddingLeft = `${(path.length - 1) * 14 + 6}px`;
+    item.style.paddingLeft = `${node.depth * 14 + 6}px`;
     item.textContent = `📁 ${node.title}`;
-    if (node === currentFolder) item.classList.add("active");
-    item.addEventListener("click", () => setCurrentFolder(path));
+    if (node.pathKey === currentFolder.pathKey) item.classList.add("active");
+    item.addEventListener("click", () => setCurrentFolderByPathKey(node.pathKey));
     folderTree.appendChild(item);
   });
 }
@@ -88,7 +118,7 @@ function renderBreadcrumb() {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = idx === 0 ? "全部资料" : node.title;
-    button.addEventListener("click", () => setCurrentFolder(currentPath.slice(0, idx + 1)));
+    button.addEventListener("click", () => setCurrentFolderByPathKey(node.pathKey));
     breadcrumb.appendChild(button);
   });
 }
@@ -102,19 +132,18 @@ function sortChildren(children) {
 
 function renderFolderView() {
   viewTitle.textContent = currentFolder === rootTree ? "全部资料" : currentFolder.title;
-  const children = sortChildren(currentFolder.children || []);
-  resultCount.textContent = `共 ${children.length} 项`;
+  console.log("Current folder:", currentFolder.title, currentFolder.pathKey, currentFolder.children);
+
+  const folderChildren = currentFolder.children || [];
+  resultCount.textContent = `共 ${folderChildren.length} 项`;
 
   contentList.innerHTML = "";
-  if (children.length === 0) {
-    const emptyMessage =
-      currentFolder === rootTree
-        ? "目录尚未同步。请先运行 GitHub Actions 更新 Google Drive 目录。"
-        : "该文件夹为空。";
-    contentList.innerHTML = `<div class="row"><span class="muted">${emptyMessage}</span></div>`;
+  if (folderChildren.length === 0) {
+    contentList.innerHTML = '<div class="row"><span class="muted">该文件夹为空。</span></div>';
     return;
   }
 
+  const children = sortChildren(folderChildren);
   children.forEach((item) => {
     const row = document.createElement("div");
     row.className = "row";
@@ -124,7 +153,7 @@ function renderFolderView() {
     nameCell.textContent = `${item.type === "folder" ? "📁" : "📄"} ${item.title}`;
     if (item.type === "folder") {
       nameCell.type = "button";
-      nameCell.addEventListener("click", () => setCurrentFolder([...currentPath, item]));
+      nameCell.addEventListener("click", () => setCurrentFolderByPathKey(item.pathKey));
     }
 
     const typeCell = document.createElement("span");
@@ -140,7 +169,7 @@ function renderFolderView() {
     action.href = item.url || DRIVE_FOLDER_URL;
     action.target = "_blank";
     action.rel = "noopener noreferrer";
-    action.textContent = item.type === "folder" ? "打开" : "打开";
+    action.textContent = "打开";
 
     row.append(nameCell, typeCell, updatedCell, action);
     contentList.appendChild(row);
@@ -152,15 +181,14 @@ function searchTree(keyword) {
   if (!normalized) return [];
 
   const results = [];
-  function walk(node, path) {
-    const current = [...path, node];
+  function walk(node) {
     const isMatch = node.title.toLowerCase().includes(normalized) && (node.type === "folder" || node.type === "file");
     if (isMatch) {
-      results.push({ node, path: current });
+      results.push({ node, path: buildPathFromNode(node) });
     }
-    (node.children || []).forEach((child) => walk(child, current));
+    (node.children || []).forEach((child) => walk(child));
   }
-  walk(rootTree, []);
+  walk(rootTree);
   return results.filter((item) => item.node !== rootTree);
 }
 
@@ -198,7 +226,7 @@ function renderSearchResults() {
       action.addEventListener("click", () => {
         activeSearch = "";
         searchInput.value = "";
-        setCurrentFolder(path);
+        setCurrentFolderByPathKey(node.pathKey);
       });
     } else {
       action.href = node.url || DRIVE_FOLDER_URL;
@@ -234,6 +262,9 @@ async function loadTree() {
     rootTree = safeNode(fallbackTree);
   }
 
+  nodeMap = new Map();
+  rootTree = buildRuntimeTree(rootTree);
+
   openAllBtn.href = rootTree.url || DRIVE_FOLDER_URL;
   currentFolder = rootTree;
   currentPath = [rootTree];
@@ -246,8 +277,8 @@ searchInput.addEventListener("input", (event) => {
 });
 
 backBtn.addEventListener("click", () => {
-  if (currentPath.length <= 1) return;
-  setCurrentFolder(currentPath.slice(0, -1));
+  if (!currentFolder.parent) return;
+  setCurrentFolderByPathKey(currentFolder.parent.pathKey);
 });
 
 loadTree();
