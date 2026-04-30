@@ -77,10 +77,12 @@ function createCategoryButton(name, onClick) {
 function matchesFilters(note) {
   const inCategory = currentCategory === "全部" || note.category === currentCategory;
   const keyword = currentKeyword.trim().toLowerCase();
+  const pathText = (note.path || []).join(" ").toLowerCase();
   const inKeyword =
     !keyword ||
     note.title.toLowerCase().includes(keyword) ||
     note.category.toLowerCase().includes(keyword) ||
+    pathText.includes(keyword) ||
     note.description.toLowerCase().includes(keyword);
   return inCategory && inKeyword;
 }
@@ -124,18 +126,43 @@ function renderNotes() {
     return;
   }
 
+  const grouped = new Map();
   filtered.forEach((note) => {
-    const article = document.createElement("article");
-    article.className = "note-item";
-    article.innerHTML = `
-      <h4>${note.title}</h4>
-      <p class="meta">分类：${note.category}</p>
-      <p class="desc">${note.description}</p>
-      <span class="tag">${note.status}</span>
-      <p class="meta">更新：${note.updatedAt}</p>
-      <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开资料</a>
-    `;
-    notesContainer.appendChild(article);
+    const level1 = note.path?.[0] || note.category || "其他资料";
+    const level2 = note.path?.[1] || "未分组";
+    if (!grouped.has(level1)) grouped.set(level1, new Map());
+    const level2Map = grouped.get(level1);
+    if (!level2Map.has(level2)) level2Map.set(level2, []);
+    level2Map.get(level2).push(note);
+  });
+
+  grouped.forEach((level2Map, level1) => {
+    const group1Title = document.createElement("h3");
+    group1Title.className = "group-title";
+    group1Title.textContent = level1;
+    notesContainer.appendChild(group1Title);
+
+    level2Map.forEach((items, level2) => {
+      const group2Title = document.createElement("h4");
+      group2Title.className = "subgroup-title";
+      group2Title.textContent = level2;
+      notesContainer.appendChild(group2Title);
+
+      items.forEach((note) => {
+        const article = document.createElement("article");
+        article.className = "note-item";
+        article.innerHTML = `
+          <h4>${note.title}</h4>
+          <p class="meta">分类：${note.category}</p>
+          <p class="meta">路径：${(note.path || []).join(" / ") || "未提供"}</p>
+          <p class="desc">${note.description}</p>
+          <span class="tag">${note.status}</span>
+          <p class="meta">更新：${note.updatedAt}</p>
+          <a class="btn" href="${note.url}" target="_blank" rel="noopener noreferrer">打开资料</a>
+        `;
+        notesContainer.appendChild(article);
+      });
+    });
   });
 }
 
@@ -147,7 +174,8 @@ function renderRecentUpdates() {
     .slice(0, 5)
     .forEach((item) => {
       const li = document.createElement("li");
-      li.innerHTML = `<strong>${item.updatedAt}</strong> · ${item.title}`;
+      const pathText = (item.path || []).join(" / ");
+      li.innerHTML = `<strong>${item.updatedAt}</strong> · ${item.title}${pathText ? `（${pathText}）` : ""}`;
       recentUpdates.appendChild(li);
     });
 }
@@ -162,15 +190,26 @@ function normalizeDriveTree(rootNode) {
   const normalized = [];
 
   function walk(node, path) {
-    if (!node || !node.type) return;
+    if (!node) return;
 
-    if (node.type === "folder") {
+    if (Array.isArray(node)) {
+      node.forEach((item) => walk(item, path));
+      return;
+    }
+
+    const nodeType =
+      node.type ||
+      (Array.isArray(node.children) ? "folder" : node.url ? "file" : "");
+
+    if (!nodeType) return;
+
+    if (nodeType === "folder") {
       const nextPath = path.concat(node.title || "未命名文件夹");
       (node.children || []).forEach((child) => walk(child, nextPath));
       return;
     }
 
-    if (node.type === "file") {
+    if (nodeType === "file") {
       const category = node.category || path[0] || "其他资料";
       normalized.push({
         title: node.title || "未命名 PDF",
@@ -178,12 +217,17 @@ function normalizeDriveTree(rootNode) {
         description: `来源：${path.join(" / ")}`,
         status: "自动同步",
         url: node.url || DRIVE_FOLDER_URL,
-        updatedAt: node.updatedAt || "1970-01-01"
+        updatedAt: node.updatedAt || "1970-01-01",
+        path: path.slice()
       });
     }
   }
 
-  walk(rootNode, []);
+  if (rootNode?.children) {
+    walk(rootNode.children, []);
+  } else {
+    walk(rootNode, []);
+  }
   return normalized;
 }
 
