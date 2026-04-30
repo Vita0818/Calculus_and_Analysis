@@ -53,9 +53,9 @@ function buildVisibleRoot(rawRoot) {
   };
 }
 
-function buildRuntimeTree(node, parent = null, parentPath = [], parentPathKey = "root") {
+function buildRuntimeTree(node, parent = null, parentPath = [], parentPathKey = "") {
   const currentPath = [...parentPath, node.title];
-  const currentPathKey = parent ? `${parentPathKey}/${node.title}` : "root";
+  const currentPathKey = parent ? `${parentPathKey}/${node.title}` : "";
 
   node.parent = parent;
   node.path = currentPath;
@@ -132,14 +132,23 @@ function sortChildren(children) {
 
 function renderFolderView() {
   viewTitle.textContent = currentFolder === rootTree ? "全部资料" : currentFolder.title;
-  console.log("Current folder:", currentFolder.title, currentFolder.pathKey, currentFolder.children);
+  console.log("Current folder selected:", {
+    title: currentFolder.title,
+    pathKey: currentFolder.pathKey,
+    childrenCount: currentFolder.children?.length,
+    children: currentFolder.children
+  });
 
   const folderChildren = currentFolder.children || [];
   resultCount.textContent = `共 ${folderChildren.length} 项`;
 
   contentList.innerHTML = "";
   if (folderChildren.length === 0) {
-    contentList.innerHTML = '<div class="row"><span class="muted">该文件夹为空。</span></div>';
+    const emptyMessage =
+      currentFolder === rootTree
+        ? "目录尚未同步。请先运行 GitHub Actions 更新 Google Drive 目录。"
+        : "该文件夹为空。";
+    contentList.innerHTML = `<div class="row"><span class="muted">${emptyMessage}</span></div>`;
     return;
   }
 
